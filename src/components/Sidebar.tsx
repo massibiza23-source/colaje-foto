@@ -53,6 +53,8 @@ interface SidebarProps {
   onExportPDF: () => void;
   onDirectPrint: () => void;
   onClearAll: () => void;
+  uploadedImages: string[];
+  setUploadedImages: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export default function Sidebar({
@@ -74,7 +76,9 @@ export default function Sidebar({
   onExportPNG,
   onExportPDF,
   onDirectPrint,
-  onClearAll
+  onClearAll,
+  uploadedImages,
+  setUploadedImages
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<'design' | 'photo' | 'text' | 'deco'>('design');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,12 +103,29 @@ export default function Sidebar({
     }
   };
 
+  // Sync items loaded as pictures with the Banco de Fotos
+  React.useEffect(() => {
+    const activeUrls = items.map(it => it.imageUrl).filter(Boolean) as string[];
+    if (activeUrls.length > 0) {
+      setUploadedImages(prev => {
+        const unseen = activeUrls.filter(url => !prev.includes(url));
+        if (unseen.length > 0) {
+          return [...prev, ...unseen];
+        }
+        return prev;
+      });
+    }
+  }, [items, setUploadedImages]);
+
   // Handle file uploads for specific slots/layers
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedItemId) return;
 
     const url = URL.createObjectURL(file);
+    // Add to bank
+    setUploadedImages(prev => prev.includes(url) ? prev : [...prev, url]);
+
     setItems(prev => prev.map(item => {
       if (item.id === selectedItemId) {
         return {
@@ -118,6 +139,243 @@ export default function Sidebar({
       }
       return item;
     }));
+  };
+
+  // Handle uploading multiple photos at once (Carga Masiva)
+  const handleMultiplePhotosUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const urls = Array.from(files).map(file => URL.createObjectURL(file as Blob));
+    setUploadedImages(prev => [...prev, ...urls]);
+
+    const isFreeform = activeTemplate.slots.length === 0 || activeTemplate.id.includes('free');
+
+    if (isFreeform) {
+      // Add all as floating polaroids on the canvas
+      const newItems: CollageItem[] = urls.map((url, i) => {
+        const offset = i * 4;
+        const newId = `free-${Date.now()}-${i}`;
+        return {
+          id: newId,
+          imageUrl: url,
+          scale: 1.0,
+          rotation: (Math.random() * 12) - 6, // slight artistic rotation
+          offsetX: 0,
+          offsetY: 0,
+          filter: 'none',
+          borderColor: '#FFFFFF',
+          borderWidth: 6,
+          borderRadius: 4,
+          x: Math.max(15, Math.min(85, 30 + Math.random() * 30 + offset)),
+          y: Math.max(15, Math.min(85, 33 + Math.random() * 30 + (i % 3) * 5)),
+          w: 45,
+          h: 40,
+          zIndex: items.length + 1 + i
+        };
+      });
+
+      setItems(prev => [...prev, ...newItems]);
+      if (newItems.length > 0) {
+        setSelectedItemId(newItems[newItems.length - 1].id);
+      }
+    } else {
+      // In grid layout, fill empty slots first
+      const emptySlots = activeTemplate.slots.filter(slot => {
+        const boundItem = items.find(it => it.slotId === slot.id);
+        return !boundItem || !boundItem.imageUrl;
+      });
+
+      let nextItems = [...items];
+      let assignedCount = 0;
+
+      // Assign to empty slots
+      for (let i = 0; i < urls.length && i < emptySlots.length; i++) {
+        const slot = emptySlots[i];
+        const url = urls[i];
+        assignedCount++;
+
+        const matchIdx = nextItems.findIndex(it => it.slotId === slot.id);
+        if (matchIdx >= 0) {
+          nextItems[matchIdx] = {
+            ...nextItems[matchIdx],
+            imageUrl: url,
+            scale: 1.0,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0
+          };
+        } else {
+          nextItems.push({
+            id: `item-${slot.id}-${Date.now()}-${i}`,
+            imageUrl: url,
+            scale: 1.0,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0,
+            filter: 'none',
+            borderColor: '#FFFFFF',
+            borderWidth: 0,
+            borderRadius: 0,
+            slotId: slot.id,
+            zIndex: 1
+          });
+        }
+      }
+
+      setItems(nextItems);
+      
+      // Auto-select the last assigned item
+      if (assignedCount > 0) {
+        const lastSlot = emptySlots[assignedCount - 1];
+        const lastItem = nextItems.find(it => it.slotId === lastSlot.id);
+        if (lastItem) {
+          setSelectedItemId(lastItem.id);
+        }
+      }
+    }
+  };
+
+  // Assign image selected from the bank
+  const handleSelectFromBank = (url: string) => {
+    if (selectedItemId) {
+      setItems(prev => prev.map(item => {
+        if (item.id === selectedItemId) {
+          return {
+            ...item,
+            imageUrl: url,
+            scale: 1.0,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0
+          };
+        }
+        return item;
+      }));
+    } else {
+      const isFreeform = activeTemplate.slots.length === 0 || activeTemplate.id.includes('free');
+      if (isFreeform) {
+        const newId = `free-${Date.now()}`;
+        const newItem: CollageItem = {
+          id: newId,
+          imageUrl: url,
+          scale: 1.0,
+          rotation: (Math.random() * 12) - 6,
+          offsetX: 0,
+          offsetY: 0,
+          filter: 'none',
+          borderColor: '#FFFFFF',
+          borderWidth: 6,
+          borderRadius: 4,
+          x: 25 + Math.random() * 40,
+          y: 25 + Math.random() * 40,
+          w: 45,
+          h: 40,
+          zIndex: items.length + 1
+        };
+        setItems(prev => [...prev, newItem]);
+        setSelectedItemId(newId);
+      } else {
+        // Find empty slot
+        const emptySlot = activeTemplate.slots.find(slot => {
+          const bound = items.find(it => it.slotId === slot.id);
+          return !bound || !bound.imageUrl;
+        });
+
+        if (emptySlot) {
+          setItems(prev => {
+            const matchIdx = prev.findIndex(it => it.slotId === emptySlot.id);
+            if (matchIdx >= 0) {
+              return prev.map((item, idx) => idx === matchIdx ? { ...item, imageUrl: url, scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0 } : item);
+            } else {
+              return [...prev, {
+                id: `item-${emptySlot.id}-${Date.now()}`,
+                imageUrl: url,
+                scale: 1.0,
+                rotation: 0,
+                offsetX: 0,
+                offsetY: 0,
+                filter: 'none',
+                borderColor: '#FFFFFF',
+                borderWidth: 0,
+                borderRadius: 0,
+                slotId: emptySlot.id,
+                zIndex: 1
+              }];
+            }
+          });
+          setSelectedItemId(null); // Deselect after assigning
+        } else {
+          alert("Todas las celdas de la plantilla están llenas. Haz clic en una celda de la hoja para seleccionarla, y haz clic en alguna foto del banco para reemplazarla.");
+        }
+      }
+    }
+  };
+
+  const removeImageFromBank = (urlToRemove: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUploadedImages(prev => prev.filter(url => url !== urlToRemove));
+  };
+
+  const handleAutoFillGrid = () => {
+    const emptySlots = activeTemplate.slots.filter(slot => {
+      const bound = items.find(it => it.slotId === slot.id);
+      return !bound || !bound.imageUrl;
+    });
+    
+    if (emptySlots.length === 0) {
+      alert("Todas las celdas ya tienen fotos asignadas.");
+      return;
+    }
+
+    const availableBankImages = uploadedImages.filter(url => {
+      return !items.some(it => it.imageUrl === url);
+    });
+
+    const imagesToUse = availableBankImages.length > 0 ? availableBankImages : uploadedImages;
+
+    if (imagesToUse.length === 0) {
+      alert("No tienes fotos en el banco para auto-rellenar. ¡Sube un lote con el cargador masivo primero!");
+      return;
+    }
+
+    let nextItems = [...items];
+    let filled = 0;
+
+    for (let i = 0; i < emptySlots.length && i < imagesToUse.length; i++) {
+      const slot = emptySlots[i];
+      const url = imagesToUse[i];
+      filled++;
+
+      const matchIdx = nextItems.findIndex(it => it.slotId === slot.id);
+      if (matchIdx >= 0) {
+        nextItems[matchIdx] = {
+          ...nextItems[matchIdx],
+          imageUrl: url,
+          scale: 1.0,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0
+        };
+      } else {
+        nextItems.push({
+          id: `item-${slot.id}-${Date.now()}-${i}`,
+          imageUrl: url,
+          scale: 1.0,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0,
+          filter: 'none',
+          borderColor: '#FFFFFF',
+          borderWidth: 0,
+          borderRadius: 0,
+          slotId: slot.id,
+          zIndex: 1
+        });
+      }
+    }
+
+    setItems(nextItems);
   };
 
   const handleUpdateItemProperty = (property: keyof CollageItem, value: any) => {
@@ -140,6 +398,9 @@ export default function Sidebar({
     if (!file) return;
 
     const url = URL.createObjectURL(file);
+    // Add to bank
+    setUploadedImages(prev => prev.includes(url) ? prev : [...prev, url]);
+
     const newId = `free-${Date.now()}`;
     const newItem: CollageItem = {
       id: newId,
@@ -479,12 +740,108 @@ export default function Sidebar({
         {activeTab === 'photo' && (
           <div className="space-y-6 animate-fade-in" id="photo-tab-panel">
             {!selectedItemId ? (
-              <div className="text-center py-8 px-4 bg-white/40 border border-[#1A1A1A]/10 border-dashed">
-                <ImageIcon className="w-8 h-8 text-[#1A1A1A]/40 mx-auto mb-2" />
-                <h4 className="font-serif italic text-sm text-[#1A1A1A]">Ninguna celda seleccionada</h4>
-                <p className="text-[11px] text-[#1A1A1A]/60 mt-1">
-                  Haz clic en cualquier espacio de foto en la previsualización A4 para subir imágenes y aplicar filtros exclusivos.
-                </p>
+              <div className="space-y-6">
+                {/* Cargador Masivo Directo */}
+                <div className="bg-white border border-[#1A1A1A]/10 p-5 text-center space-y-4">
+                  <div className="w-10 h-10 rounded-full bg-[#1A1A1A]/5 flex items-center justify-center mx-auto text-[#1A1A1A]">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif italic text-base text-[#1A1A1A]">Subir Múltiples Fotos</h4>
+                    <p className="text-[11px] text-[#1A1A1A]/60 mt-1.5 max-w-xs mx-auto">
+                      Selecciona o arrastra varias fotos a la vez. Se distribuirán en tu colaje A4 automáticamente.
+                    </p>
+                  </div>
+                  
+                  <label className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] hover:bg-black text-white text-[10px] uppercase tracking-widest font-bold py-3 px-4 rounded-none cursor-pointer transition shadow-sm">
+                    <Plus className="w-4 h-4" />
+                    Seleccionar fotos
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple
+                      onChange={handleMultiplePhotosUpload} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+
+                {/* Banco de Fotos Cargadas */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase font-bold tracking-widest block opacity-50">
+                      Banco de Fotos ({uploadedImages.length})
+                    </label>
+                    {uploadedImages.length > 0 && !activeTemplate.id.includes('free') && (
+                      <button
+                        onClick={handleAutoFillGrid}
+                        className="text-[9px] uppercase tracking-wider font-bold text-[#1A1A1A] hover:underline flex items-center gap-1 cursor-pointer"
+                        title="Rellena las celdas vacías con fotos de tu banco"
+                      >
+                        <RefreshCw className="w-3 h-3 animate-spin duration-10000" /> Auto-rellenar
+                      </button>
+                    )}
+                  </div>
+
+                  {uploadedImages.length === 0 ? (
+                    <div className="text-center py-8 p-4 bg-white/30 border border-[#1A1A1A]/10 border-dashed text-[#1A1A1A]/60">
+                      <p className="text-[11px]">No has cargado imágenes aún.</p>
+                      <span className="text-[10px] opacity-75 mt-0.5 block">¡Carga un lote para comenzar a armar tu colaje!</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {uploadedImages.map((url, i) => {
+                        // Check if this image has already been assigned to any layout cells
+                        const isAssigned = items.some(it => it.imageUrl === url);
+                        
+                        return (
+                          <div 
+                            key={i}
+                            onClick={() => handleSelectFromBank(url)}
+                            className="aspect-square bg-[#FAF9F5] border border-[#1A1A1A]/10 relative group cursor-pointer overflow-hidden hover:scale-105 hover:border-[#1A1A1A] transition-all"
+                            title="Haz clic para colocar en el lienzo"
+                          >
+                            <img 
+                              src={url} 
+                              alt={`bank-img-${i}`} 
+                              className="w-full h-full object-cover select-none pointer-events-none"
+                            />
+                            
+                            {/* Hover info label */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-1 text-center">
+                              <span className="text-[8px] leading-tight text-white uppercase font-bold tracking-wide">
+                                {activeTemplate.id.includes('free') ? 'Añadir' : 'Colocar'}
+                              </span>
+                            </div>
+                            
+                            {/* Status Indicators */}
+                            {isAssigned && (
+                              <div className="absolute top-1 left-1 bg-emerald-700 text-white rounded-full p-0.5 shadow-sm" title="Imagen activa en el colaje">
+                                <Check className="w-2.5 h-2.5" />
+                              </div>
+                            )}
+
+                            {/* Delete single bank photo */}
+                            <button
+                              onClick={(e) => removeImageFromBank(url, e)}
+                              className="absolute top-1 right-1 bg-white/95 text-[#1A1A1A]/50 hover:text-red-700 p-1 hover:bg-white shadow-sm border border-[#1A1A1A]/10 opacity-0 group-hover:opacity-100 transition"
+                              title="Quitar del banco de fotos"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {uploadedImages.length > 0 && (
+                    <p className="text-[10px] text-[#1A1A1A]/50 italic text-center mt-1">
+                      {activeTemplate.id.includes('free') 
+                        ? '💡 Haz clic en una foto para agregarla como Polaroid libre' 
+                        : '💡 Selecciona una celda del papel, luego toca la foto para rellenarla'}
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
@@ -521,7 +878,7 @@ export default function Sidebar({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#1A1A1A] flex items-center gap-1 font-bold">
-                          <Check className="w-3.5 h-3.5" /> Foto cargada
+                          <Check className="w-3.5 h-3.5 animate-pulse text-emerald-700" /> Foto cargada
                         </p>
                         <p className="text-[10px] text-[#1A1A1A]/50 truncate">Sustituye la imagen actual en cualquier momento</p>
                       </div>
@@ -627,7 +984,7 @@ export default function Sidebar({
                           <button
                             key={filter.value}
                             onClick={() => handleUpdateItemProperty('filter', filter.value)}
-                            className={`p-2.5 border text-xs font-semibold text-left transition flex items-center justify-between ${
+                            className={`p-2.5 border text-xs font-semibold text-left transition flex items-center justify-between rounded-none ${
                               selectedItem.filter === filter.value
                                 ? 'border-[#1A1A1A] bg-white text-[#1A1A1A] font-bold shadow-sm'
                                 : 'border-[#1A1A1A]/10 bg-white/40 hover:bg-white text-[#1A1A1A]/60'
@@ -682,12 +1039,48 @@ export default function Sidebar({
                             setItems(prev => prev.filter(it => it.id !== selectedItemId));
                             setSelectedItemId(null);
                           }}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-650/10 hover:bg-red-600 text-red-650 hover:text-white text-[10px] uppercase font-bold tracking-widest transition"
+                          className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-600/10 hover:bg-red-600 text-red-700 hover:text-white text-[10px] uppercase font-bold tracking-widest transition"
                         >
                           <Trash2 className="w-4 h-4" /> Eliminar foto libre
                         </button>
                       </div>
                     )}
+
+                    {/* Inline Image Bank substitution inside active editing section */}
+                    <div className="border-t border-[#1A1A1A]/10 pt-4 mt-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] uppercase font-bold tracking-widest block opacity-50">
+                          Sustituir con Banco de Fotos ({uploadedImages.length})
+                        </label>
+                      </div>
+
+                      {uploadedImages.length === 0 ? (
+                        <div className="text-center py-4 bg-white/20 border border-[#1A1A1A]/10 border-dashed text-xs text-[#1A1A1A]/50 font-serif italic">
+                          No tienes fotos cargadas en el banco aún.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {uploadedImages.map((url, i) => (
+                            <div 
+                              key={i}
+                              onClick={() => handleSelectFromBank(url)}
+                              className={`aspect-square relative cursor-pointer overflow-hidden border transition group ${
+                                selectedItem?.imageUrl === url 
+                                  ? 'border-2 border-[#1A1A1A] scale-105' 
+                                  : 'border-[#1A1A1A]/10 hover:border-[#1A1A1A]/55'
+                              }`}
+                              title="Haz clic para rellenar la celda seleccionada con esta foto"
+                            >
+                              <img src={url} alt={`swap-bank-img-${i}`} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[9px] text-[#1A1A1A]/50 text-center tracking-wide font-medium">
+                        Toca cualquier foto de arriba para asignarla instantáneamente a la celda seleccionada.
+                      </p>
+                    </div>
                   </>
                 )}
               </div>

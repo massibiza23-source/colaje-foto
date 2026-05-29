@@ -41,6 +41,7 @@ export default function App() {
   const [stickers, setStickers] = useState<DecoSticker[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   
   // Status alerts
   const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'info'; text: string } | null>({
@@ -373,6 +374,8 @@ export default function App() {
         onExportPDF={handleExportPDF}
         onDirectPrint={() => setIsPrintModalOpen(true)}
         onClearAll={handleClearAll}
+        uploadedImages={uploadedImages}
+        setUploadedImages={setUploadedImages}
       />
 
       {/* 2. WYSIWYG CANVAS PREVIEW WORKSPACE */}
