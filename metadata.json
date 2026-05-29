@@ -1,0 +1,6 @@
+{
+  "name": "Creador de Colajes A4",
+  "description": "Una aplicación web interactiva para diseñar colajes de fotos personalizados en formato A4 con descarga en alta resolución y exportación a PDF listo para impresión.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
