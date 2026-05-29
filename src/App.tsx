@@ -9,7 +9,9 @@ import {
   RefreshCw,
   Share2,
   Check,
-  AlertCircle
+  AlertCircle,
+  Sliders,
+  Layers
 } from 'lucide-react';
 
 import { 
@@ -42,6 +44,7 @@ export default function App() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [mobileView, setMobileView] = useState<'editor' | 'canvas'>('canvas');
   
   // Status alerts
   const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'info'; text: string } | null>({
@@ -353,45 +356,105 @@ export default function App() {
         </div>
       )}
 
+      {/* 📱 Mobile Navigation Trigger Tabs Bar */}
+      <div className="lg:hidden flex bg-[#121212] border-b border-white/10 shrink-0 select-none z-30" id="mobile-views-toggle">
+        <button
+          type="button"
+          onClick={() => setMobileView('canvas')}
+          className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest text-center flex items-center justify-center gap-2 border-r border-white/5 transition-all ${
+            mobileView === 'canvas' 
+              ? 'bg-[#F7F6F2] text-[#1A1A1A] font-extrabold' 
+              : 'text-white/60 hover:text-white'
+          }`}
+          id="mobile-view-canvas-btn"
+        >
+          <Layers className="w-3.5 h-3.5" />
+          Ver Lienzo A4
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView('editor')}
+          className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest text-center flex items-center justify-center gap-2 transition-all ${
+            mobileView === 'editor' 
+              ? 'bg-[#F7F6F2] text-[#1A1A1A] font-extrabold' 
+              : 'text-white/60 hover:text-white'
+          }`}
+          id="mobile-view-editor-btn"
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          Ajustes y Fotos
+          {selectedItemId && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          )}
+        </button>
+      </div>
+
       {/* 1. SIDEBAR CONTROLS DASHBOARD */}
-      <Sidebar
-        config={config}
-        setConfig={setConfig}
-        activeTemplate={activeTemplate}
-        setActiveTemplate={setActiveTemplate}
-        templatesList={currentTemplatesList}
-        items={items}
-        setItems={setItems}
-        selectedItemId={selectedItemId}
-        setSelectedItemId={setSelectedItemId}
-        texts={texts}
-        setTexts={setTexts}
-        stickers={stickers}
-        setStickers={setStickers}
-        onAddText={handleAddText}
-        onAddSticker={handleAddSticker}
-        onExportPNG={handleExportPNG}
-        onExportPDF={handleExportPDF}
-        onDirectPrint={() => setIsPrintModalOpen(true)}
-        onClearAll={handleClearAll}
-        uploadedImages={uploadedImages}
-        setUploadedImages={setUploadedImages}
-      />
+      <div 
+        className={`${
+          mobileView === 'editor' ? 'flex flex-col flex-1 h-full min-h-0' : 'hidden lg:flex lg:flex-col lg:w-96 shrink-0'
+        } w-full`}
+        id="sidebar-container-wrapper"
+      >
+        <Sidebar
+          config={config}
+          setConfig={setConfig}
+          activeTemplate={activeTemplate}
+          setActiveTemplate={setActiveTemplate}
+          templatesList={currentTemplatesList}
+          items={items}
+          setItems={setItems}
+          selectedItemId={selectedItemId}
+          setSelectedItemId={setSelectedItemId}
+          texts={texts}
+          setTexts={setTexts}
+          stickers={stickers}
+          setStickers={setStickers}
+          onAddText={handleAddText}
+          onAddSticker={handleAddSticker}
+          onExportPNG={handleExportPNG}
+          onExportPDF={handleExportPDF}
+          onDirectPrint={() => setIsPrintModalOpen(true)}
+          onClearAll={handleClearAll}
+          uploadedImages={uploadedImages}
+          setUploadedImages={setUploadedImages}
+        />
+      </div>
 
       {/* 2. WYSIWYG CANVAS PREVIEW WORKSPACE */}
-      <CollageCanvas
-        config={config}
-        activeTemplate={activeTemplate}
-        items={items}
-        setItems={setItems}
-        texts={texts}
-        setTexts={setTexts}
-        stickers={stickers}
-        setStickers={setStickers}
-        selectedItemId={selectedItemId}
-        setSelectedItemId={setSelectedItemId}
-        canvasRef={canvasRef}
-      />
+      <div 
+        className={`${
+          mobileView === 'canvas' ? 'flex flex-1 h-full min-h-0' : 'hidden lg:flex lg:flex-1'
+        } relative w-full`}
+        id="canvas-container-wrapper"
+      >
+        <CollageCanvas
+          config={config}
+          activeTemplate={activeTemplate}
+          items={items}
+          setItems={setItems}
+          texts={texts}
+          setTexts={setTexts}
+          stickers={stickers}
+          setStickers={setStickers}
+          selectedItemId={selectedItemId}
+          setSelectedItemId={setSelectedItemId}
+          canvasRef={canvasRef}
+        />
+        
+        {/* Floating Quick Filter/Crop Shortcut for selected elements on mobile */}
+        {selectedItemId && mobileView === 'canvas' && (
+          <button
+            type="button"
+            onClick={() => setMobileView('editor')}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1A1A1A] hover:bg-black text-white text-[10px] font-bold tracking-widest uppercase py-3.5 px-6 shadow-2xl flex items-center gap-2 border border-white/10 animate-bounce cursor-pointer rounded-full"
+            id="mobile-quick-adjust-btn"
+          >
+            <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+            Editar Foto / Filtros
+          </button>
+        )}
+      </div>
 
       {/* 3. PHYSICAL SHEET AND DELIVERY PRINT SETTINGS MODAL */}
       <PrintPDFModal
