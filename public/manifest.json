@@ -1,0 +1,36 @@
+{
+  "name": "Creador de Colajes A4",
+  "short_name": "Colajes A4",
+  "description": "Diseña hermosos colajes en formato A4 listos para imprimir",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F5",
+  "theme_color": "#1A1A1A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/app_icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/app_icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/app_icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/app_icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -155,6 +155,29 @@ export const PORTRAIT_TEMPLATES: CollageTemplate[] = [
     ]
   },
   {
+    id: 'grid-12-portrait',
+    name: 'Mural de Recuerdos (12 Fotos)',
+    icon: 'grid-12',
+    orientation: 'portrait',
+    slots: [
+      { id: 'slot-1', x: 0, y: 0, w: 33.33, h: 25 },
+      { id: 'slot-2', x: 33.33, y: 0, w: 33.33, h: 25 },
+      { id: 'slot-3', x: 66.66, y: 0, w: 33.33, h: 25 },
+      
+      { id: 'slot-4', x: 0, y: 25, w: 33.33, h: 25 },
+      { id: 'slot-5', x: 33.33, y: 25, w: 33.33, h: 25 },
+      { id: 'slot-6', x: 66.66, y: 25, w: 33.33, h: 25 },
+      
+      { id: 'slot-7', x: 0, y: 50, w: 33.33, h: 25 },
+      { id: 'slot-8', x: 33.33, y: 50, w: 33.33, h: 25 },
+      { id: 'slot-9', x: 66.66, y: 50, w: 33.33, h: 25 },
+      
+      { id: 'slot-10', x: 0, y: 75, w: 33.33, h: 25 },
+      { id: 'slot-11', x: 33.33, y: 75, w: 33.33, h: 25 },
+      { id: 'slot-12', x: 66.66, y: 75, w: 33.33, h: 25 }
+    ]
+  },
+  {
     id: 'freeform',
     name: '✨ Estilo Libre (Scrapbook)',
     icon: 'free',
@@ -250,6 +273,28 @@ export const LANDSCAPE_TEMPLATES: CollageTemplate[] = [
       { id: 'slot-1', x: 5, y: 5, w: 25, h: 90, shape: 'rect' },
       { id: 'slot-2', x: 32.5, y: 5, w: 35, h: 90, shape: 'oval' },
       { id: 'slot-3', x: 70, y: 5, w: 25, h: 90, shape: 'rect' }
+    ]
+  },
+  {
+    id: 'grid-12-landscape',
+    name: 'Mural de Recuerdos (12 Fotos)',
+    icon: 'grid-12',
+    orientation: 'landscape',
+    slots: [
+      { id: 'slot-1', x: 0, y: 0, w: 25, h: 33.33 },
+      { id: 'slot-2', x: 25, y: 0, w: 25, h: 33.33 },
+      { id: 'slot-3', x: 50, y: 0, w: 25, h: 33.33 },
+      { id: 'slot-4', x: 75, y: 0, w: 25, h: 33.33 },
+      
+      { id: 'slot-5', x: 0, y: 33.33, w: 25, h: 33.33 },
+      { id: 'slot-6', x: 25, y: 33.33, w: 25, h: 33.33 },
+      { id: 'slot-7', x: 50, y: 33.33, w: 25, h: 33.33 },
+      { id: 'slot-8', x: 75, y: 33.33, w: 25, h: 33.33 },
+      
+      { id: 'slot-9', x: 0, y: 66.66, w: 25, h: 33.33 },
+      { id: 'slot-10', x: 25, y: 66.66, w: 25, h: 33.33 },
+      { id: 'slot-11', x: 50, y: 66.66, w: 25, h: 33.33 },
+      { id: 'slot-12', x: 75, y: 66.66, w: 25, h: 33.33 }
     ]
   },
   {
