@@ -155,6 +155,25 @@ export const PORTRAIT_TEMPLATES: CollageTemplate[] = [
     ]
   },
   {
+    id: 'grid-8-portrait',
+    name: 'Cuadrícula 2x4 (8 Fotos)',
+    icon: 'grid-8',
+    orientation: 'portrait',
+    slots: [
+      { id: 'slot-1', x: 0, y: 0, w: 50, h: 25 },
+      { id: 'slot-2', x: 50, y: 0, w: 50, h: 25 },
+      
+      { id: 'slot-3', x: 0, y: 25, w: 50, h: 25 },
+      { id: 'slot-4', x: 50, y: 25, w: 50, h: 25 },
+      
+      { id: 'slot-5', x: 0, y: 50, w: 50, h: 25 },
+      { id: 'slot-6', x: 50, y: 50, w: 50, h: 25 },
+      
+      { id: 'slot-7', x: 0, y: 75, w: 50, h: 25 },
+      { id: 'slot-8', x: 50, y: 75, w: 50, h: 25 }
+    ]
+  },
+  {
     id: 'grid-12-portrait',
     name: 'Mural de Recuerdos (12 Fotos)',
     icon: 'grid-12',
@@ -273,6 +292,23 @@ export const LANDSCAPE_TEMPLATES: CollageTemplate[] = [
       { id: 'slot-1', x: 5, y: 5, w: 25, h: 90, shape: 'rect' },
       { id: 'slot-2', x: 32.5, y: 5, w: 35, h: 90, shape: 'oval' },
       { id: 'slot-3', x: 70, y: 5, w: 25, h: 90, shape: 'rect' }
+    ]
+  },
+  {
+    id: 'grid-8-landscape',
+    name: 'Cuadrícula 4x2 (8 Fotos)',
+    icon: 'grid-8',
+    orientation: 'landscape',
+    slots: [
+      { id: 'slot-1', x: 0, y: 0, w: 25, h: 50 },
+      { id: 'slot-2', x: 25, y: 0, w: 25, h: 50 },
+      { id: 'slot-3', x: 50, y: 0, w: 25, h: 50 },
+      { id: 'slot-4', x: 75, y: 0, w: 25, h: 50 },
+      
+      { id: 'slot-5', x: 0, y: 50, w: 25, h: 50 },
+      { id: 'slot-6', x: 25, y: 50, w: 25, h: 50 },
+      { id: 'slot-7', x: 50, y: 50, w: 25, h: 50 },
+      { id: 'slot-8', x: 75, y: 50, w: 25, h: 50 }
     ]
   },
   {
